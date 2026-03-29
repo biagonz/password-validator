@@ -1,19 +1,18 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # dependencies
-/node_modules
-/.pnp
+**/node_modules
+.pnp
 .pnp.js
 
 # testing
-/coverage
+**/coverage
 
 # next.js
-/.next/
-/out/
+**/.next/
+**/out/
 
 # production
-/build
+**/build/
+**/dist/
 
 # misc
 .DS_Store
@@ -24,13 +23,27 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# local env files
-.env*.local
-.env
+# env files — nunca versionar segredos
+**/.env
+**/.env.local
+**/.env*.local
+# manter os exemplos para documentação
+!**/.env.example
 
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
-next-env.d.ts
+**/next-env.d.ts
+
+# terraform
+**/.terraform/
+**/terraform.tfstate
+**/terraform.tfstate.backup
+**/crash.log
+**/override.tf
+**/override.tf.json
+**/*.tfvars
+# lock file deve ser versionado — trava versões dos providers
+!**/.terraform.lock.hcl
