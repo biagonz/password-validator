@@ -1,0 +1,138 @@
+@use "sass:color";
+
+$color-valid: #16a34a;
+$color-invalid: #dc2626;
+$color-border: #d1d5db;
+$color-primary: #2563eb;
+$radius: 8px;
+
+.container {
+  font-family: system-ui, sans-serif;
+  max-width: 480px;
+  padding: 2rem;
+  border: 1px solid $color-border;
+  border-radius: $radius;
+  background: #ffffff;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 1.5rem;
+  color: #111827;
+}
+
+.form {
+  display: flex;
+  gap: 0.75rem;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+  }
+}
+
+.inputWrapper {
+  position: relative;
+  flex: 1;
+  display: flex;
+}
+
+.input {
+  flex: 1;
+  padding: 0.625rem 2.5rem 0.625rem 0.875rem;
+  border: 1px solid $color-border;
+  border-radius: $radius;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+
+  &:focus {
+    border-color: $color-primary;
+    box-shadow: 0 0 0 3px rgba($color-primary, 0.15);
+  }
+}
+
+.toggleButton {
+  position: absolute;
+  right: 0.625rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 0;
+  display: flex;
+  align-items: center;
+
+  &:hover {
+    color: #111827;
+  }
+}
+
+.button {
+  padding: 0.625rem 1.25rem;
+  background: $color-primary;
+  color: white;
+  border: none;
+  border-radius: $radius;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+
+  &:hover:not(:disabled) {
+    background: color.adjust($color-primary, $lightness: -8%);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.errorBanner {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: $radius;
+  color: $color-invalid;
+  font-size: 0.875rem;
+}
+
+.result {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: $radius;
+  font-size: 0.875rem;
+
+  &.valid {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: $color-valid;
+  }
+
+  &.invalid {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: $color-invalid;
+  }
+}
+
+.resultStatus {
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+}
+
+.errorList {
+  margin: 0;
+  padding-left: 1.25rem;
+
+  li {
+    margin-top: 0.25rem;
+    line-height: 1.5;
+  }
+}
