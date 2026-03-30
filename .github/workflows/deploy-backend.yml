@@ -1,0 +1,64 @@
+name: Deploy Backend to Lambda
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "ms-password/**"
+      - ".github/workflows/deploy-backend.yml"
+
+jobs:
+  deploy:
+    name: Build, Push ECR & Update Lambda
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login no Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build da imagem Docker
+        working-directory: ms-password
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build \
+            -t ${{ secrets.ECR_URL }}:$IMAGE_TAG \
+            -t ${{ secrets.ECR_URL }}:latest \
+            .
+
+      - name: Push para o ECR
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker push ${{ secrets.ECR_URL }}:$IMAGE_TAG
+          docker push ${{ secrets.ECR_URL }}:latest
+
+      - name: Atualizar Lambda com a nova imagem
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          aws lambda update-function-code \
+            --function-name ${{ secrets.LAMBDA_FUNCTION_NAME }} \
+            --image-uri ${{ secrets.ECR_URL }}:$IMAGE_TAG
+
+      - name: Aguardar Lambda finalizar update
+        run: |
+          aws lambda wait function-updated \
+            --function-name ${{ secrets.LAMBDA_FUNCTION_NAME }}
+
+      - name: Verificar status do deploy
+        run: |
+          aws lambda get-function \
+            --function-name ${{ secrets.LAMBDA_FUNCTION_NAME }} \
+            --query 'Configuration.[FunctionName,LastUpdateStatus,State]' \
+            --output table

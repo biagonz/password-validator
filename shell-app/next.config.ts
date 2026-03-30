@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 import type { ExternalItemFunctionData } from "webpack";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  output: "export",
   reactStrictMode: true,
   webpack(config, { isServer, webpack }) {
     config.plugins.push(
