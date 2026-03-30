@@ -34,6 +34,7 @@ jobs:
           NEXT_PUBLIC_API_URL: ${{ secrets.API_GATEWAY_URL }}
           NEXT_PUBLIC_CLIENT_ID: ${{ secrets.COGNITO_CLIENT_ID }}
           NEXT_PUBLIC_CLIENT_SECRET: ${{ secrets.COGNITO_CLIENT_SECRET }}
+          NEXT_PRIVATE_LOCAL_WEBPACK: "true"
         run: npm run build
 
       - name: Configure AWS credentials
@@ -83,6 +84,7 @@ jobs:
         working-directory: shell-app
         env:
           NEXT_PUBLIC_MFE_PASSWORD_URL: ${{ secrets.MFE_CLOUDFRONT_URL }}
+          NEXT_PRIVATE_LOCAL_WEBPACK: "true"
         run: npm run build
 
       - name: Configure AWS credentials

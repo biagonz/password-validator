@@ -1,7 +1,5 @@
 import { useState } from "react";
-// import {
-//   validatePassword,
-// } from "@/services/password.service";
+import { validatePassword } from "@/services/password.service";
 import styles from "./styles.module.scss";
 import { fieldValidator, ValidationResult } from "@/utils/field-validator";
 import { CloseEyeIcon, OpenEyeIcon } from "@/assets";
@@ -19,8 +17,13 @@ export default function PasswordValidator() {
     setError(null);
 
     try {
-      //   const data = await validatePassword(password);
-      setResult(fieldValidator(password));
+      const localResult = fieldValidator(password);
+      if (!localResult.valid) {
+        setResult(localResult);
+        return;
+      }
+      const data = await validatePassword(password);
+      setResult(data);
     } catch {
       setError(
         "Falha ao conectar ao serviço de validação. O backend está rodando?",
