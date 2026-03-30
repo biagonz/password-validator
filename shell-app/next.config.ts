@@ -1,7 +1,9 @@
 import { NextFederationPlugin } from "@module-federation/nextjs-mf";
 import type { NextConfig } from "next";
+import type { ExternalItemFunctionData } from "webpack";
 
 const nextConfig: NextConfig = {
+  /* config options here */
   reactStrictMode: true,
   webpack(config, { isServer, webpack }) {
     config.plugins.push(
@@ -21,13 +23,27 @@ const nextConfig: NextConfig = {
       os: false,
     };
 
+    if (isServer) {
+      const existingExternals = config.externals ?? [];
+      config.externals = [
+        ...(Array.isArray(existingExternals)
+          ? existingExternals
+          : [existingExternals]),
+        async ({ request }: ExternalItemFunctionData) => {
+          if (request?.startsWith("mfePassword/")) {
+            return `commonjs ${request}`;
+          }
+        },
+      ];
+    }
+
     if (!isServer) {
       config.plugins.push(
         new NextFederationPlugin({
-          name: "mfePassword",
+          name: "shellApp",
           filename: "static/chunks/remoteEntry.js",
-          exposes: {
-            "./PasswordValidator": "./src/components/PasswordValidator/PasswordValidator.tsx",
+          remotes: {
+            mfePassword: `mfePassword@${process.env.NEXT_PUBLIC_MFE_PASSWORD_URL ?? "http://localhost:3002"}/_next/static/chunks/remoteEntry.js`,
           },
           shared: {
             react: { singleton: true, requiredVersion: false },
