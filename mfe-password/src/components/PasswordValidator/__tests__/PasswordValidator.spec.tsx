@@ -1,14 +1,24 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import PasswordValidator from "../PasswordValidator";
+import { validatePassword } from "@/services/password.service";
 
-// Mocka os ícones SVG para simplificar o DOM nos testes
 jest.mock("@/assets", () => ({
   CloseEyeIcon: () => <svg data-testid="close-eye-icon" />,
   OpenEyeIcon: () => <svg data-testid="open-eye-icon" />,
 }));
 
+jest.mock("@/services/password.service");
+
+const mockValidatePassword = validatePassword as jest.MockedFunction<
+  typeof validatePassword
+>;
+
 describe("PasswordValidator", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   describe("renderização inicial", () => {
     it("renderiza o título do componente", () => {
       render(<PasswordValidator />);
@@ -50,7 +60,7 @@ describe("PasswordValidator", () => {
       render(<PasswordValidator />);
       const input = screen.getByLabelText("Campo de senha");
 
-      await userEvent.type(input, "AbcDefG1!");
+      await userEvent.type(input, "abc");
       await userEvent.click(screen.getByRole("button", { name: "Validar" }));
 
       await waitFor(() => {
@@ -92,61 +102,115 @@ describe("PasswordValidator", () => {
   });
 
   describe("validação do formulário", () => {
-    it("exibe 'Senha válida' ao submeter uma senha válida", async () => {
-      render(<PasswordValidator />);
-      await userEvent.type(
-        screen.getByLabelText("Campo de senha"),
-        "AbcDefG1!",
-      );
-      await userEvent.click(screen.getByRole("button", { name: "Validar" }));
+    describe("senha inválida — validação local (fieldValidator)", () => {
+      it("exibe 'Senha inválida' sem chamar a API", async () => {
+        render(<PasswordValidator />);
+        await userEvent.type(screen.getByLabelText("Campo de senha"), "abc");
+        await userEvent.click(screen.getByRole("button", { name: "Validar" }));
 
-      await waitFor(() => {
-        expect(screen.getByText("✓ Senha válida")).toBeInTheDocument();
+        await waitFor(() => {
+          expect(screen.getByText("✗ Senha inválida")).toBeInTheDocument();
+        });
+        expect(mockValidatePassword).not.toHaveBeenCalled();
+      });
+
+      it("exibe a lista de erros quando a senha não passa na validação local", async () => {
+        render(<PasswordValidator />);
+        await userEvent.type(screen.getByLabelText("Campo de senha"), "abc");
+        await userEvent.click(screen.getByRole("button", { name: "Validar" }));
+
+        await waitFor(() => {
+          expect(
+            screen.getByText("A senha deve ter pelo menos 9 caracteres"),
+          ).toBeInTheDocument();
+          expect(
+            screen.getByText("A senha deve ter pelo menos 1 dígito"),
+          ).toBeInTheDocument();
+          expect(
+            screen.getByText("A senha deve ter pelo menos 1 letra maiúscula"),
+          ).toBeInTheDocument();
+        });
       });
     });
 
-    it("exibe 'Senha inválida' ao submeter uma senha inválida", async () => {
-      render(<PasswordValidator />);
-      await userEvent.type(screen.getByLabelText("Campo de senha"), "abc");
-      await userEvent.click(screen.getByRole("button", { name: "Validar" }));
+    describe("senha válida localmente — chama a API (validatePassword)", () => {
+      it("chama validatePassword quando fieldValidator passa", async () => {
+        mockValidatePassword.mockResolvedValueOnce({ valid: true, errors: [] });
 
-      await waitFor(() => {
-        expect(screen.getByText("✗ Senha inválida")).toBeInTheDocument();
+        render(<PasswordValidator />);
+        await userEvent.type(
+          screen.getByLabelText("Campo de senha"),
+          "AbcDefG1!",
+        );
+        await userEvent.click(screen.getByRole("button", { name: "Validar" }));
+
+        await waitFor(() => {
+          expect(mockValidatePassword).toHaveBeenCalledWith("AbcDefG1!");
+        });
       });
-    });
 
-    it("exibe a lista de erros quando a senha é inválida", async () => {
-      render(<PasswordValidator />);
-      await userEvent.type(screen.getByLabelText("Campo de senha"), "abc");
-      await userEvent.click(screen.getByRole("button", { name: "Validar" }));
+      it("exibe 'Senha válida' com o resultado da API", async () => {
+        mockValidatePassword.mockResolvedValueOnce({ valid: true, errors: [] });
 
-      await waitFor(() => {
-        expect(
-          screen.getByText("A senha deve ter pelo menos 9 caracteres"),
-        ).toBeInTheDocument();
-        expect(
-          screen.getByText("A senha deve ter pelo menos 1 dígito"),
-        ).toBeInTheDocument();
-        expect(
-          screen.getByText("A senha deve ter pelo menos 1 letra maiúscula"),
-        ).toBeInTheDocument();
-      });
-    });
+        render(<PasswordValidator />);
+        await userEvent.type(
+          screen.getByLabelText("Campo de senha"),
+          "AbcDefG1!",
+        );
+        await userEvent.click(screen.getByRole("button", { name: "Validar" }));
 
-    it("não exibe lista de erros quando a senha é válida", async () => {
-      render(<PasswordValidator />);
-      await userEvent.type(
-        screen.getByLabelText("Campo de senha"),
-        "AbcDefG1!",
-      );
-      await userEvent.click(screen.getByRole("button", { name: "Validar" }));
-
-      await waitFor(() => {
+        await waitFor(() => {
+          expect(screen.getByText("✓ Senha válida")).toBeInTheDocument();
+        });
         expect(screen.queryByRole("list")).not.toBeInTheDocument();
+      });
+
+      it("exibe erros da API quando o backend rejeita a senha", async () => {
+        mockValidatePassword.mockResolvedValueOnce({
+          valid: false,
+          errors: ["Senha encontrada em lista de senhas comprometidas"],
+        });
+
+        render(<PasswordValidator />);
+        await userEvent.type(
+          screen.getByLabelText("Campo de senha"),
+          "AbcDefG1!",
+        );
+        await userEvent.click(screen.getByRole("button", { name: "Validar" }));
+
+        await waitFor(() => {
+          expect(screen.getByText("✗ Senha inválida")).toBeInTheDocument();
+          expect(
+            screen.getByText(
+              "Senha encontrada em lista de senhas comprometidas",
+            ),
+          ).toBeInTheDocument();
+        });
+      });
+
+      it("exibe banner de erro quando a API falha", async () => {
+        mockValidatePassword.mockRejectedValueOnce(new Error("Network error"));
+
+        render(<PasswordValidator />);
+        await userEvent.type(
+          screen.getByLabelText("Campo de senha"),
+          "AbcDefG1!",
+        );
+        await userEvent.click(screen.getByRole("button", { name: "Validar" }));
+
+        await waitFor(() => {
+          expect(
+            screen.getByText(
+              "Falha ao conectar ao serviço de validação. O backend está rodando?",
+            ),
+          ).toBeInTheDocument();
+        });
       });
     });
 
     it("o resultado tem aria-live='polite' para acessibilidade", async () => {
+      mockValidatePassword.mockResolvedValueOnce({ valid: true, errors: [] });
+
       render(<PasswordValidator />);
       await userEvent.type(
         screen.getByLabelText("Campo de senha"),
