@@ -15,11 +15,11 @@ Usuário
           └─ /api/*     → API Gateway → Lambda → NestJS (ms-password)
 ```
 
-| Aplicação | Tecnologia | Porta local | Função |
-|---|---|---|---|
-| `shell-app` | Next.js 14 (Pages Router) | 3000 | Host do Micro Frontend |
-| `mfe-password` | Next.js 15 (Pages Router) | 3002 | Micro Frontend com o componente de validação |
-| `ms-password` | NestJS | 3001 | API REST de validação de senhas |
+| Aplicação      | Tecnologia                | Porta local | Função                                       |
+| -------------- | ------------------------- | ----------- | -------------------------------------------- |
+| `shell-app`    | Next.js 14 (Pages Router) | 3000        | Host do Micro Frontend                       |
+| `mfe-password` | Next.js 15 (Pages Router) | 3002        | Micro Frontend com o componente de validação |
+| `ms-password`  | NestJS                    | 3001        | API REST de validação de senhas              |
 
 ---
 
@@ -52,7 +52,7 @@ mfe-password
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  CloudFront (shell-app)  dgdw15lyfj5qo.cloudfront.net      │
+│  CloudFront (shell-app)  d23svf17vzwino.cloudfront.net      │
 │  ├─ Origin 1: S3 (shell-app)      ← rota /                 │
 │  ├─ Origin 2: CloudFront mfe-password ← rota /mfe/*        │
 │  └─ Origin 3: API Gateway          ← rota /api/*           │
@@ -167,6 +167,7 @@ terraform apply
 ```
 
 Isso cria:
+
 - Bucket S3: `password-validator-teste-27032026-tfstate`
 - Tabela DynamoDB: `password-validator-teste-27032026-tflock`
 
@@ -368,9 +369,9 @@ COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.8.4 \
 
 Variáveis de ambiente necessárias para o LWA:
 
-| Variável | Valor | Motivo |
-|---|---|---|
-| `AWS_LWA_PORT` | `3001` | Porta onde o NestJS escuta |
+| Variável                   | Valor   | Motivo                                                |
+| -------------------------- | ------- | ----------------------------------------------------- |
+| `AWS_LWA_PORT`             | `3001`  | Porta onde o NestJS escuta                            |
 | `AWS_LWA_REMOVE_BASE_PATH` | `/prod` | Remove o prefixo do stage antes de repassar ao NestJS |
 
 ### Autenticação
